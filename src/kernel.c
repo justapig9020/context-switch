@@ -10,8 +10,8 @@ void init_kernel(void)
 {
 
     uart_init (BAUD_RATE);
-    printf ("hello %d, %x\n\r", 0x1234, (unsigned long)0xABCD);
     uart_send_string ("\r\n=== Hello, world! ===\r\n");
+    printf ("%d, %x\n\r", 1234, (unsigned long)0xABCD);
 /*
     load_tsk (t1, T0_STK);
     uart_send_string ("Thread0 loaded!\r\n");

@@ -2,23 +2,28 @@
 
 #define TYPE_NUN 3
 
+void mem_cpy(char *src, char *dis, int len)
+{
+    for (int i=0; i<len; i++)
+        dis[i] = src[i];
+}
+
 void prt_int(char *arg)
 {
-    int a;
+    int num;
+    int len;
     char buf[5];
-    a = 0;
-    uart_send_string ("prt_int\n\r");
-    mem_dump (arg, 4);
-    for (int i=0; i<4; i++) {
-        a <<= 8;
-        a += arg[i];
+
+    num = 0;
+    len = 0;
+
+    mem_cpy (arg, &num, sizeof(int));
+    while (num) {
+        buf[len++] = ((num % 10) & 0xff)+ '0';
+        num /= 10;
     }
-    mem_dump (&a, 4);
-    for (int i=4; i>=0; i--) {
-        buf[i] = (a%10) + '0';
-        a /= 10;
-    }
-    for (int i=0; i<5; i++) {
+
+    for (int i=len-1; i>=0; i--) {
         uart_send (buf[i]);
     }
 }
@@ -144,14 +149,7 @@ int print(int a, int b, int c, int d, int e, int f, int g, int h, char *s, ...)
     char *arg_ptr;
 
     arg_ptr = ((char *)&s) + sizeof(s);
-    uart_send_string ("---\r\n");
-    send_addr (0x1234);
-    uart_send_string ("---\r\n");
-    send_addr ((unsigned long)&h);
-    uart_send_string ("---\r\n");
-    send_addr ((unsigned long)arg_ptr);
-    uart_send_string ("---\r\n");
-    mem_dump (arg_ptr, 0x40);
+    // mem_dump (arg_ptr, 0x40);
     while (s[i] != '\0') {
         switch (s[i]) {
             case '%':
