@@ -1,10 +1,10 @@
 #ifndef _TASK_H_
 #define _TASK_H_
 
-#define __t1 __attribute__((section(".text.t1")))
-#define __t2 __attribute__((section(".text.t2")))
+#define __func1 __attribute__((section(".text.func1")))
+#define __func2 __attribute__((section(".text.func2")))
 
-void t1(int);
-void t2(int);
+void func1(int);
+void func2(int);
 
 #endif

@@ -1,25 +1,32 @@
 #include "mini_uart.h"
 #include "task.h"
 #include "kernel.h"
+#include "iolib.h"
 
-__t1 void t1(int n)
+static void delay()
 {
+    for (int i=0; i<100000; i++);
+}
+
+__func1 void func1(int n)
+{
+    char c;
+    int i;
+    i = 0;
     while(1){
-        uart_send_string ("This is task one @ thread ");
-        uart_send (n + '0');
-        uart_send_string ("\n\r");
-        uart_recv ();
+        printf ("%d : This is func1 @ thread %d !!!!\n", i++, n);
+        delay ();
         _release ();
     }
 }
 
-__t2 void t2(int n)
+__func2 void func2(int n)
 {
+    char c;
+    int i;
     while(1){
-        uart_send_string ("This is task two @ thread ");
-        uart_send (n + '0');
-        uart_send_string ("\n\r");
-        uart_recv ();
+        printf ("%d : This is func2 @ thread %d !!!!\n", i++, n);
+        delay ();
         _release ();
     }
 }

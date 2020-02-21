@@ -18,14 +18,17 @@ void prt_int(char *arg)
     len = 0;
 
     mem_cpy (arg, &num, sizeof(int));
+
+    buf[0] = '0';
     while (num) {
         buf[len++] = ((num % 10) & 0xff)+ '0';
         num /= 10;
     }
 
-    for (int i=len-1; i>=0; i--) {
+    for (int i=len-1; i>0; i--) {
         uart_send (buf[i]);
     }
+    uart_send (buf[0]);
 }
 
 void send_hex(char c)
@@ -97,6 +100,7 @@ void prt_hex(char *arg)
 {
     char buf[16];
     int o;
+
     for (int i=15, o=7; i>=0; o--) {
         buf[i--] = (arg[o] >> 4) & 0x0f;
         buf[i--] = arg[o] & 0x0f;
@@ -149,12 +153,14 @@ int print(int a, int b, int c, int d, int e, int f, int g, int h, char *s, ...)
     char *arg_ptr;
 
     arg_ptr = ((char *)&s) + sizeof(s);
-    // mem_dump (arg_ptr, 0x40);
     while (s[i] != '\0') {
         switch (s[i]) {
             case '%':
                 arg_ptr += prt_arg (s[++i], arg_ptr);
             break;
+            case '\n':
+                uart_send ('\n');
+                uart_send ('\r');
             case '\\':
                 prt_sc (s[++i]);
             break;

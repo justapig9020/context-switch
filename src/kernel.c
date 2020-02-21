@@ -5,23 +5,22 @@
 #include "task.h"
 #include "mm.h"
 
-//__init 
-void init_kernel(void)
+__init void init_kernel(void)
 {
 
     uart_init (BAUD_RATE);
-    uart_send_string ("\r\n=== Hello, world! ===\r\n");
-    printf ("%d, %x\n\r", 1234, (unsigned long)0xABCD);
-/*
-    load_tsk (t1, T0_STK);
-    uart_send_string ("Thread0 loaded!\r\n");
+    printf ("\n=== Hello, world! ===\n");
 
-    load_tsk (t1, T1_STK);
-    uart_send_string ("Thread1 loaded!\r\n");
+    printf ("Process0 loaded, fi@%x, stk@%x!\n", func1, T0_STK);
+    load_tsk (func1, T0_STK);
 
-    load_tsk (t2, T2_STK);
-    uart_send_string ("Thread2 loaded!\r\n");
+    printf ("Process1 loaded, fi@%x, stk@%x!\n", func1, T1_STK);
 
-    _start_kernel ();
-    */
+    load_tsk (func1, T1_STK);
+    printf ("Process1 loaded, fi@%x, stk@%x!\n", func1, T1_STK);
+
+    load_tsk (func2, T2_STK);
+    printf ("Process2 loaded, fi@%x, stk@%x!\n", func2, T2_STK);
+
+    _start_kernel (T0_STK - 0x20);
 }
