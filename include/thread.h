@@ -3,13 +3,14 @@
 
 #define TASK_NUM 3
 
-struct thrd 
+struct prc
 {
     void *sp;
 };
 
-int get_tid();
-void *scheduler(void*);
+int get_pid();
+int scheduler(void*);
+void *reload(int)
 void load_tsk(void (*)(), void *);
 
 #endif

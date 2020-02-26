@@ -7,14 +7,11 @@
 
 __init void init_kernel(void)
 {
-
-    uart_init (BAUD_RATE);
+    int n;
     printf ("\n=== Hello, world! ===\n");
 
-    printf ("Process0 loaded, fi@%x, stk@%x!\n", func1, T0_STK);
     load_tsk (func1, T0_STK);
-
-    printf ("Process1 loaded, fi@%x, stk@%x!\n", func1, T1_STK);
+    printf ("Process0 loaded, fi@%x, stk@%x!\n", func1, T0_STK);
 
     load_tsk (func1, T1_STK);
     printf ("Process1 loaded, fi@%x, stk@%x!\n", func1, T1_STK);
@@ -22,5 +19,5 @@ __init void init_kernel(void)
     load_tsk (func2, T2_STK);
     printf ("Process2 loaded, fi@%x, stk@%x!\n", func2, T2_STK);
 
-    _start_kernel (T0_STK - 0x20);
+    _start_kernel ();
 }

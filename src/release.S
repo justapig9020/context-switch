@@ -8,8 +8,9 @@ _release:
     mov x0, sp
     mov sp, #LOW_MEMORY
     mov x29, #LOW_MEMORY
-_schedule:
     bl scheduler
+_reload:
+    bl reload
     mov sp, x0
     ldp x1, x0, [sp], 16
     ldp x29, x30, [sp], 16
@@ -18,4 +19,4 @@ _schedule:
 .section ".text.init"
 .globl _start_kernel
 _start_kernel:
-    b _schedule
+    b _reload

@@ -1,14 +1,25 @@
 #include "mini_uart.h"
+#include "memctl.h"
+#include "va_arg.h"
 
 #define TYPE_NUN 3
 
-void mem_cpy(char *src, char *dis, int len)
+static char io_inited = 0;
+static char in_buf;
+static int baud_rate = BAUD_RATE;
+
+void set_io_baud_rate(int rate)
 {
-    for (int i=0; i<len; i++)
-        dis[i] = src[i];
+    baud_rate = rate;
 }
 
-void prt_int(char *arg)
+void io_init()
+{
+    uart_init (baud_rate);
+    io_inited = 1;
+}
+
+int prt_int(char *arg)
 {
     int num;
     int len;
@@ -19,16 +30,16 @@ void prt_int(char *arg)
 
     mem_cpy (arg, &num, sizeof(int));
 
-    buf[0] = '0';
-    while (num) {
+    do {
         buf[len++] = ((num % 10) & 0xff)+ '0';
         num /= 10;
-    }
+    } while (num);
 
-    for (int i=len-1; i>0; i--) {
+    for (int i=len-1; i>=0; i--) {
         uart_send (buf[i]);
     }
-    uart_send (buf[0]);
+
+    return len;
 }
 
 void send_hex(char c)
@@ -44,131 +55,175 @@ void send_hex(char c)
         case 7:
         case 8:
         case 9:
-            uart_send (c + '0');
+            uart_send ('0' + c);
         break;
         case 10:
-            uart_send ('A');
-        break;
         case 11:
-            uart_send ('B');
-        break;
         case 12:
-            uart_send ('C');
-        break;
         case 13:
-            uart_send ('D');
-        break;
         case 14:
-            uart_send ('E');
-        break;
         case 15:
-            uart_send ('F');
+            uart_send ('A' + c - 10);
         break;
     }
 }
 
-void mem_dump(char *addr, unsigned int sz)
-{
-    char c;
-    uart_send_string ("\n\r=== mem dump ===\n\r");
-    for (int i=0; i<sz; i++) {
-        if (i%16 == 0) {
-            uart_send ('\r');
-            uart_send ('\n');
-        }else if (i%8 == 0) {
-            uart_send (' ');
-        }
-        c = (addr[i] >> 4) & 0xf;
-        send_hex(c);
-        c = (addr[i] & 0xf);
-        send_hex(c);
-    }
-    uart_send_string ("\n\r======\n\r");
-}
-
-void send_addr(unsigned long prt)
-{
-    char c;
-    for (int i=0; i<16; i++) {
-        c = (prt & 0xf);
-        prt >>= 4;
-        send_hex(c);
-    }
-}
-
-void prt_hex(char *arg)
+int prt_hex(char *arg)
 {
     char buf[16];
-    int o;
+    int i;
+    unsigned int val;
+    int ret;
 
-    for (int i=15, o=7; i>=0; o--) {
-        buf[i--] = (arg[o] >> 4) & 0x0f;
-        buf[i--] = arg[o] & 0x0f;
-    }
-    uart_send_string ("0x");
-    for (int i=15; i>=0; i--) {
+    val = *(unsigned int *)arg;
+    i = 0;
+
+    do {
+        buf[i++] = val & 0xf;
+        val >>= 4;
+    } while (val);
+
+    ret = i;
+
+    for (i--; i>=0; i--) {
         send_hex (buf[i]);
     }
+
+    return ret;
 }
 
-int prt_arg(char c, char *arg)
+int prt_parser(char **c, char *arg)
 {
     int len;
-    switch (c) {
+    switch (**c) {
         case 'd':
-            len = 8;
-            prt_int (arg);
+            len = prt_int (arg);
         break;
         case 'l':
             len = 8;
         break;
         case 'x':
-            len = 8;
-            prt_hex (arg);
+            len = uart_send_string ("0x");
+            len += prt_hex (arg);
         break;
     }
     return len;
 }
 
-void prt_sc(char c)
+int _printf(int _pad1, int _pad2, int _pad3, int _pad4, int _pad5, int _pad6, int _pad7, int _pad8,const char *s, ...)
 {
-    switch (c) {
-        case 'n':
-            uart_send ('\n');
-            uart_send ('\r');
-        break;
-        case '\\':
-            uart_send ('\\');
-        break;
-        case 'r':
-            uart_send ('\n');
-            uart_send ('\r');
-        break;
-    }
-}
+    int i;
+    int ret;
+    long *arg_ptr;
 
-int print(int a, int b, int c, int d, int e, int f, int g, int h, char *s, ...)
-{
-    int i = 0;
-    char *arg_ptr;
+    i = 0;
+    ret = 0;
+    arg_ptr = get_va_head (s);
 
-    arg_ptr = ((char *)&s) + sizeof(s);
-    while (s[i] != '\0') {
-        switch (s[i]) {
+    if (!io_inited)
+        io_init ();
+
+    while (*s != '\0') {
+        switch (*s) {
             case '%':
-                arg_ptr += prt_arg (s[++i], arg_ptr);
+                s++;
+                ret += prt_parser (&s, arg_ptr);
+                arg_ptr++;
             break;
             case '\n':
                 uart_send ('\n');
                 uart_send ('\r');
-            case '\\':
-                prt_sc (s[++i]);
-            break;
+                ret++;
             default:
                 uart_send (s[i]);
+                ret++;
             break;
         }
+        s++;
         i++;
     }
+    return ret;
+}
+
+char is_end(char c)
+{
+    return ' ' == c || '\r' == c;
+}
+
+char is_num(char c)
+{
+    return '0' >= c || '9' <= c;
+}
+
+int get_int(int *arg)
+{
+    char c;
+    int num;
+     
+    num = 0;
+
+    while (1) {
+        c = uart_recv ();
+        if (is_end (c))
+            break;
+        if (is_num (c))
+            return -1;
+        num *= 10;
+        num += c - '0';
+    }
+    *arg = num;
     return 0;
+}
+
+int get_hex(int *ard)
+{
+
+}
+
+int get_parser(char **c, void *arg)
+{
+    int ret;
+
+    ret = 0;
+
+    switch (**c) {
+        case 'd':
+            get_int (arg);
+        break;
+        case 'x':
+            get_hex (arg);
+        break;
+    }
+    return ret;
+}
+
+int _scanf(int _pad1, int _pad2, int _pad3, int _pad4, int _pad5, int _pad6, int _pad7, int _pad8, const char *s, ...)
+{
+    int i;
+    int ret;
+    char val;
+    long *arg_ptr;
+    
+    i = 0;
+    ret = 0;
+    arg_ptr = get_va_head (s);
+
+    if (!io_inited) 
+        io_init ();
+
+    while (*s != "\0") {
+        switch (*s) {
+            case '%':
+                get_parser (&s, arg_ptr);
+            break;
+            default:
+                val = uart_recv ();
+                if (val != *s)
+                    return -1;
+            break;   
+        }
+        s++;
+    }
+
+    return ret;
 }

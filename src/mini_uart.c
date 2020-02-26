@@ -2,13 +2,15 @@
 #include "peripherals/mini_uart.h"
 #include "peripherals/gpio.h"
 
-void uart_send ( char c )
+int uart_send ( char c )
 {
     while(1) {
         if(get32(AUX_MU_LSR_REG)&0x20) 
             break;
     }
     put32(AUX_MU_IO_REG,c);
+
+    return 1;
 }
 
 char uart_recv ( void )
@@ -17,20 +19,25 @@ char uart_recv ( void )
         if(get32(AUX_MU_LSR_REG)&0x01) 
             break;
     }
+
     return(get32(AUX_MU_IO_REG)&0xFF);
 }
 
-void uart_send_string(char* str)
+int uart_send_string(char* str)
 {
-    for (int i = 0; str[i] != '\0'; i ++) {
+    int i;
+    for (i = 0; str[i] != '\0'; i ++) {
         uart_send((char)str[i]);
     }
+
+    return i-1;
 }
 
 static int get_baud_reg ( unsigned int frq )
 {
     unsigned int reg;
     reg = (SYS_CLK_FRQ >> 3) / frq - 1;
+
     return reg;
 }
 

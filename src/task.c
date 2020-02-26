@@ -5,16 +5,15 @@
 
 static void delay()
 {
-    for (int i=0; i<100000; i++);
+    for (unsigned int i=0; i<0xfffff; i++);
 }
 
 __func1 void func1(int n)
 {
-    char c;
     int i;
     i = 0;
     while(1){
-        printf ("%d : This is func1 @ thread %d !!!!\n", i++, n);
+        printf ("%d : This is func1 @ Process %d !!!!\n", i++, n);
         delay ();
         _release ();
     }
@@ -22,10 +21,9 @@ __func1 void func1(int n)
 
 __func2 void func2(int n)
 {
-    char c;
     int i;
     while(1){
-        printf ("%d : This is func2 @ thread %d !!!!\n", i++, n);
+        printf ("%d : This is func2 @ Process %d !!!!\n", i++, n);
         delay ();
         _release ();
     }
