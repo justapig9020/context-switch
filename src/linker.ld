@@ -2,7 +2,8 @@ SECTIONS
 {
     .text.boot : { *(.text.boot) }
     .text.init : { *(.text.init) }
-    .text.kernel : { *(.text) }
+    .text.kernel : { *(.text.kernel) }
+    .text : { *(.text) }
     .text.func1 : { *(.text.func1) }
     .text.func2 : { *(.text.func2) }
     .rodata : { *(.rodata) }

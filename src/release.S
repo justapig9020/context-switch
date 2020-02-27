@@ -10,7 +10,7 @@ _release:
     mov x29, #LOW_MEMORY
     bl scheduler
 _reload:
-    bl reload
+    bl reload_stk
     mov sp, x0
     ldp x1, x0, [sp], 16
     ldp x29, x30, [sp], 16

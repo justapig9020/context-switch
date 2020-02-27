@@ -1,23 +1,31 @@
 #include "mini_uart.h"
 #include "iolib.h"
 #include "kernel.h"
-#include "thread.h"
+#include "process.h"
 #include "task.h"
 #include "mm.h"
 
 __init void init_kernel(void)
 {
     int n;
-    printf ("\n=== Hello, world! ===\n");
+    int ret;
+    void *stk_ptr;
 
-    load_tsk (func1, T0_STK);
-    printf ("Process0 loaded, fi@%x, stk@%x!\n", func1, T0_STK);
+    stk_ptr = (void *)LOW_MEMORY;
+    ret = printf ("\n=== Hello, world! ===\n");
+    printf ("len: %d\n", ret);
 
-    load_tsk (func1, T1_STK);
-    printf ("Process1 loaded, fi@%x, stk@%x!\n", func1, T1_STK);
+    stk_ptr -= PAGE_SIZE;
+    load_tsk (func1, stk_ptr);
+    printf ("Process0 loaded, fi@%x, stk@%x!\n", func1, stk_ptr);
 
-    load_tsk (func2, T2_STK);
-    printf ("Process2 loaded, fi@%x, stk@%x!\n", func2, T2_STK);
+    stk_ptr -= PAGE_SIZE;
+    load_tsk (func1, stk_ptr);
+    printf ("Process1 loaded, fi@%x, stk@%x!\n", func1, stk_ptr);
+
+    stk_ptr -= PAGE_SIZE;
+    load_tsk (func2, stk_ptr);
+    printf ("Process2 loaded, fi@%x, stk@%x!\n", func2, stk_ptr);
 
     _start_kernel ();
 }

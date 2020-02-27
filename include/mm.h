@@ -10,10 +10,6 @@
 
 #define LOW_MEMORY                  (2 * SECTION_SIZE)
 
-#define T0_STK (void *)(LOW_MEMORY - PAGE_SIZE)
-#define T1_STK (void *)(T0_STK - PAGE_SIZE)
-#define T2_STK (void *)(T1_STK - PAGE_SIZE)
-
 #ifndef __ASSEMBLER__
 
 void memzero(unsigned long src, unsigned long n);

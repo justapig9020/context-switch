@@ -3,8 +3,7 @@
 
 #include "iolib.h"
 
-#define DEBUG 0
-#if DEBUG
+#ifdef DEBUG
     #define dbg(a, ...) printf(a, ##__VA_ARGS__)
 #else
     #define dbg(a, ...)

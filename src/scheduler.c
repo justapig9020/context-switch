@@ -1,55 +1,57 @@
-#include "thread.h"
+#include "process.h"
 #include "kernel.h"
 #include "mini_uart.h"
 #include "iolib.h"
 #include "debug.h"
 
-__kdata static int cur_prc = 0;
-__kdata static int prc_count = 0;
-__kdata static struct prc prc_tbl[TASK_NUM];
+static int __kdata cur_pid = 0;
+static int __kdata prc_num = 0;
+static struct process __kdata prc_tbl[TASK_NUM];
 
-__kernel int get_pid()
+int __kernel get_pid()
 {
-    return cur_prc;
+    return cur_pid;
 }
 
-__kernel static int algorithm(const int last_tsk)
+static int __kernel algorithm(int last_tsk)
 {
     return (last_tsk + 1) % TASK_NUM;
 }
 
-__kernel int scheduler(const void *last_stk)
+void __kernel scheduler(void *last_stk)
 {
     dbg ("\n=== scheduler ===\n");
-    dbg ("Process %d, last stack %x\n", cur_prc, last_stk);
-    prc_tbl[cur_prc].sp = last_stk;
-    cur_prc = algorithm (cur_prc);
-    dbg ("Next process %d, load stack @ %x\n", cur_prc, prc_tbl[cur_prc].sp);
+    dbg ("Process %d, last stack %x\n", cur_pid, last_stk);
+
+    prc_tbl[cur_pid].sp = last_stk;
+    cur_pid = algorithm (cur_pid);
+
+    dbg ("Next process %d, load stack @ %x\n", cur_pid, prc_tbl[cur_pid].sp);
     dbg ("\n=================\n");
-    return cur_prc;
 }
 
-__kernel void *reload(const int cur_prc)
+void __kernel *reload_stk()
 {
-    return prc_tbl[cur_prc].sp;
+    dbg ("reloading, sp: %x\n", prc_tbl[cur_pid].sp);
+
+    return prc_tbl[cur_pid].sp;
 }
 
-__kernel static void init_process(long * const sp, const long arg1, const void (*fi)())
+static void __kernel init_process(long * sp, long arg1, void (*fi)())
 {
     sp[0] = 0; // x1, second argument
     sp[1] = arg1; // x0, fist argument
     sp[2] = 0;  // fp
     sp[3] = (long)fi; // lr, fist instruction
     dbg ("pre-stk dump");
-    // mem_dump (sp, 4 * sizeof(long));
 }
 
-__kernel void load_tsk(const void (*func)(), const void * const sp)
+void __kernel load_tsk(void (*func)(), void * sp)
 {
-    prc_tbl[prc_count].sp = sp - 32;
-    init_process (prc_tbl[prc_count].sp, prc_count, func);
-    dbg ("\tProcess %d loaded, fi %x, stk %x\n", prc_count, func, sp);
-    dbg ("prc_tbl dump");
-    // mem_dump (prc_tbl, sizeof(prc_tbl));
-    prc_count++;
+    prc_tbl[prc_num].sp = sp - 32;
+    init_process (prc_tbl[prc_num].sp, prc_num, func);
+
+    dbg ("\tProcess %d loaded, fi %x, stk %x\n", prc_num, func, sp);
+
+    prc_num++;
 }
