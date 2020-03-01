@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "kernel/utils.h"
 #include "peripherals/mini_uart.h"
 #include "peripherals/gpio.h"
 
@@ -27,7 +27,9 @@ int uart_send_string(char* str)
 {
     int i;
     for (i = 0; str[i] != '\0'; i ++) {
-        uart_send((char)str[i]);
+        uart_send(str[i]);
+        if (str[i] == '\n')
+            uart_send('\r');
     }
 
     return i-1;

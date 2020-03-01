@@ -1,19 +1,17 @@
-#include "mini_uart.h"
+#include "connect/mini_uart.h"
 #include "iolib.h"
-#include "kernel.h"
-#include "process.h"
+#include "kernel/kernel.h"
+#include "kernel/process.h"
 #include "task.h"
-#include "mm.h"
+#include "kernel/mm.h"
 
 __init void init_kernel(void)
 {
-    int n;
-    int ret;
     void *stk_ptr;
 
+    uart_init (BAUD_RATE);
     stk_ptr = (void *)LOW_MEMORY;
-    ret = printf ("\n=== Hello, world! ===\n");
-    printf ("len: %d\n", ret);
+    printf ("\n=== Hello, world! ===\n");
 
     stk_ptr -= PAGE_SIZE;
     load_tsk (func1, stk_ptr);

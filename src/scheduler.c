@@ -1,8 +1,8 @@
-#include "process.h"
-#include "kernel.h"
-#include "mini_uart.h"
+#include "kernel/process.h"
+#include "kernel/kernel.h"
+#include "connect/mini_uart.h"
+#include "debug/debug.h"
 #include "iolib.h"
-#include "debug.h"
 
 static int __kdata cur_pid = 0;
 static int __kdata prc_num = 0;

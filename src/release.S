@@ -1,4 +1,4 @@
-#include "mm.h"
+#include "kernel/mm.h"
 
 .section ".text.kernel"
 .globl _release

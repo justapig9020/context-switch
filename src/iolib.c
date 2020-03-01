@@ -1,84 +1,83 @@
-#include "mini_uart.h"
+#include "connect/mini_uart.h"
 #include "memctl.h"
 #include "va_arg.h"
 
 #define TYPE_NUN 3
 
-static char io_inited = 0;
 static char in_buf;
-static int baud_rate = BAUD_RATE;
 
-void set_io_baud_rate(int rate)
+static int _i2s(int src, char **dis)
 {
-    baud_rate = rate;
-}
+    int ret;
+    ret = 1;
 
-static void io_init()
-{
-    uart_init (baud_rate);
-    io_inited = 1;
+    if (src / 10) {
+        ret += _i2s(src / 10, dis);
+        (*dis)++;
+    }
+    **dis = (src % 10) + '0';
+    (*dis)[1] = '\0';
+    return ret;
+
 }
 
 int i2s(int src, char *dis)
 {
-    int len;
+    char **dis_ptr;
+    dis_ptr = &dis;
 
-    len = 0;
-
-    do {
-        dis[len++] = ((src % 10) & 0xff)+ '0';
-        src /= 10;
-    } while (src);
-
-    return len;
+    return _i2s(src, dis_ptr);
 }
 
-int prt_int(char *arg)
+int prt_int(char *arg, char *o_ptr)
 {
     int num;
     int len;
-    char buf[5];
 
     num = 0;
     len = 0;
 
     mem_cpy (arg, &num, sizeof(int));
-    len = i2s (num, buf);
-
-    for (int i=len-1; i>=0; i--) {
-        uart_send (buf[i]);
-    }
+    len = i2s (num, o_ptr);
 
     return len;
 }
 
-void send_hex(char c)
+char h2s(char c)
 {
     switch (c) {
         case 0 ... 9:
-            uart_send ('0' + c);
+            return ('0' + c);
         break;
         case 10 ... 15:
-            uart_send ('A' + c - 10);
+            return ('A' + c - 10);
         break;
     }
+    return 0x00;
+}
+
+static int _i2h(int src, char **dis)
+{
+    int ret;
+    
+    ret = 1;
+
+    if (src >> 4) {
+        ret += _i2h(src >> 4, dis);
+        (*dis)++;
+    }
+    **dis = h2s((char)(src & 0xf));
+    return ret;
 }
 
 int i2h(int src, char *dis)
 {
-    int len;
-
-    len = 0;
-
-    do {
-        dis[len++] = src & 0xf;
-        src >>= 4;
-    } while (src);
-
-    return len;
+    char **dis_ptr;
+    dis_ptr = &dis;
+    return _i2h(src, dis_ptr);
 }
 
-int prt_hex(char *arg)
+int prt_hex(char *arg, char *o_ptr)
 {
     char buf[16];
     int i;
@@ -87,64 +86,69 @@ int prt_hex(char *arg)
 
     val = *(unsigned int *)arg;
 
-    ret = i2h (val, buf);
+    *(o_ptr++) = '0';
+    *(o_ptr++) = 'x';
 
-    for (i = ret - 1; i>=0; i--) {
-        send_hex (buf[i]);
-    }
+    ret = 2;
+    ret += i2h (val, o_ptr);
 
     return ret;
 }
 
-static int prt_parser(const char **c, void *arg)
+int prt_chr(char *arg, char *o_ptr)
 {
-    int len;
+    *o_ptr = *arg & 0xff;
+    return 0;
+}
+
+static int prt_parser(const char **c, void *arg, char *o_ptr)
+{
     switch (**c) {
         case 'd':
-            len = prt_int (arg);
+            return prt_int (arg, o_ptr);
         break;
         case 'l':
-            len = 8;
+            return 0;
         break;
         case 'x':
-            len = uart_send_string ("0x");
-            len += prt_hex (arg);
+            return prt_hex (arg, o_ptr);
+        break;
+        case 'c':
+            return prt_chr(arg, o_ptr);
         break;
     }
-    return len;
+    return -1;
 }
 
 int _printf(int _pad1, int _pad2, int _pad3, int _pad4, int _pad5, int _pad6, int _pad7, int _pad8,const char *s, ...)
 {
-    int ret;
+    int len;
     void *arg_ptr;
+    char o_buf[0x100];
 
-    ret = 0;
+    len = 0;
     arg_ptr = get_va_head (s);
-
-    if (!io_inited)
-        io_init ();
 
     while (*s != '\0') {
         switch (*s) {
             case '%':
                 s++;
-                ret += prt_parser (&s, arg_ptr);
+                len += prt_parser (&s, arg_ptr, &(o_buf[len]));
                 next_va (arg_ptr);
             break;
             case '\n':
-                uart_send ('\n');
-                uart_send ('\r');
-                ret++;
+                o_buf[len++] = '\n';
             break;
             default:
-                uart_send (*s);
-                ret++;
+                o_buf[len++] = *s;
             break;
         }
         s++;
     }
-    return ret;
+
+    o_buf[len] = '\0';
+    uart_send_string (o_buf);
+    return len;
 }
 
 // TODO scanf get interger and hex
@@ -185,7 +189,8 @@ int get_hex(int *ard)
 
 int get_parser(const char **c, void *arg)
 {
-    int ret;
+    int ret = 0;
+    /*
 
     ret = 0;
 
@@ -197,22 +202,21 @@ int get_parser(const char **c, void *arg)
             get_hex (arg);
         break;
     }
+    */
     return ret;
 }
 
 int _scanf(int _pad1, int _pad2, int _pad3, int _pad4, int _pad5, int _pad6, int _pad7, int _pad8, const char *s, ...)
 {
+    int ret = 0;
+    /*
     int i;
-    int ret;
     char val;
     void *arg_ptr;
     
     i = 0;
     ret = 0;
     arg_ptr = get_va_head (s);
-
-    if (!io_inited) 
-        io_init ();
 
     while (*s != '\0') {
         switch (*s) {
@@ -227,6 +231,6 @@ int _scanf(int _pad1, int _pad2, int _pad3, int _pad4, int _pad5, int _pad6, int
         }
         s++;
     }
-
+*/
     return ret;
 }

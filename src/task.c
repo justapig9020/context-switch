@@ -1,6 +1,6 @@
-#include "mini_uart.h"
+#include "connect/mini_uart.h"
+#include "kernel/kernel.h"
 #include "task.h"
-#include "kernel.h"
 #include "iolib.h"
 
 static void delay()
