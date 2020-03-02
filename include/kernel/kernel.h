@@ -5,7 +5,7 @@
 #define __init __attribute__((section(".text.init")))
 #define __kdata __attribute__((section(".data.kernel")))
 
-void _release();
+void _syscall();
 void _start_kernel();
 void init_kernel(void);
 

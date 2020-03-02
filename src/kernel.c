@@ -10,7 +10,7 @@ __init void init_kernel(void)
     void *stk_ptr;
 
     uart_init (BAUD_RATE);
-    stk_ptr = (void *)LOW_MEMORY;
+    stk_ptr = (void *)K_STK;
     printf ("\n=== Hello, world! ===\n");
 
     stk_ptr -= PAGE_SIZE;

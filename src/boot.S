@@ -32,6 +32,6 @@ el1_entry:
     sub    x1, x1, x0
     bl     memzero
 
-    mov    sp, #LOW_MEMORY 
+    mov    sp, #K_STK
     bl    init_kernel
     b     proc_hang        // should never come here
