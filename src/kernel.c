@@ -9,12 +9,10 @@ __init void init_kernel(void)
 {
 
     uart_init (BAUD_RATE);
-    printf ("\n=== Hello, world! ===\n");
+    printf ("\n=== Hello, world!! ===\n");
 
-    printf ("Process0 loaded, fi@%x, stk@%x!\n", func1, T0_STK);
     load_tsk (func1, T0_STK);
-
-    printf ("Process1 loaded, fi@%x, stk@%x!\n", func1, T1_STK);
+    printf ("Process1 loaded, fi@%x, stk@%x!\n", func1, T0_STK);
 
     load_tsk (func1, T1_STK);
     printf ("Process1 loaded, fi@%x, stk@%x!\n", func1, T1_STK);
